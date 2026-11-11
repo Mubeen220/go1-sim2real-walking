@@ -1,7 +1,8 @@
 # Gallery: graphs, videos and photos
 
 All files referenced here live under [`docs/results/`](results/). Images render inline once the
-binary files have been pushed (see the top-level README).
+binary files have been pushed (see the top-level README). The policy table is in
+[`POLICY_REFERENCE.md`](POLICY_REFERENCE.md).
 
 ## Policy comparison (MuJoCo, through the deployment code path)
 
@@ -14,17 +15,18 @@ binary files have been pushed (see the top-level README).
 ## Isaac Lab training curves
 
 Each figure shows mean reward, linear/angular tracking rewards, fall rate (`base_contact`) and the
-command-curriculum level for one training run. The figure title is the run's log name.
+command-curriculum level for one training run. The figure title is the run's log name; the mapping
+to policies is from [`POLICY_REFERENCE.md`](POLICY_REFERENCE.md).
 
-![training_train_final](results/plots/training_train_final.png)
-
-Other runs:
-[`train_6dir`](results/plots/training_train_6dir.png) ·
-[`train_alldir`](results/plots/training_train_alldir.png) ·
-[`train_clearance_fix`](results/plots/training_train_clearance_fix.png) ·
-[`train_enhanced`](results/plots/training_train_enhanced.png) ·
-[`train_resume`](results/plots/training_train_resume.png) ·
-[`train_stdfix`](results/plots/training_train_stdfix.png)
+| Log | Meaning | Plot |
+|---|---|---|
+| `train_final` | Contributed to the A-family runs | ![](results/plots/training_train_final.png) |
+| `train_6dir` | Policy B (all-direction curriculum) | [plot](results/plots/training_train_6dir.png) |
+| `train_clearance_fix` | Policy C (`feet_clearance` experiment) | [plot](results/plots/training_train_clearance_fix.png) |
+| `train_enhanced` | Failed: over-penalised, did not walk | [plot](results/plots/training_train_enhanced.png) |
+| `train_stdfix` | Failed: tracking std too tight, gait collapse | [plot](results/plots/training_train_stdfix.png) |
+| `train_alldir` | No-curriculum experiment | [plot](results/plots/training_train_alldir.png) |
+| `train_resume` | Interrupted / resumed run (curriculum counter reset bug) | [plot](results/plots/training_train_resume.png) |
 
 ## Isaac Lab trajectory plots
 
