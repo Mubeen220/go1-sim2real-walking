@@ -1,13 +1,16 @@
 # Go1 Sim-to-Real Walking: Isaac Lab → MuJoCo → Hardware
 
+![Overview: training in Isaac Lab, validation in MuJoCo, deployment on the real Go1](docs/images/overview.png)
+
+**▶ [Watch the real-robot video](docs/results/videos/real_robot_walking.mp4)** · [Graphs and all videos](docs/GALLERY.md) · [Full project report](docs/WORKFLOW_REPORT.md) · [Policy table](docs/POLICY_REFERENCE.md)
+
 Sim-to-real transfer of a deep-RL walking controller for the **Unitree Go1** quadruped.
 A policy is trained with PPO in **NVIDIA Isaac Lab**, gated through an independent **MuJoCo**
 sim-to-sim check, and deployed on the real robot with a **pure-numpy** forward pass
 (no PyTorch / ONNX on the robot).
 
 Developed during an M2 EEEA (MMVAI) internship at the IBISC laboratory,
-Université d'Évry Paris-Saclay, 2026. Full write-up: [`docs/WORKFLOW_REPORT.md`](docs/WORKFLOW_REPORT.md).
-Graphs, videos and photos: [`docs/GALLERY.md`](docs/GALLERY.md). Policy table: [`docs/POLICY_REFERENCE.md`](docs/POLICY_REFERENCE.md).
+Université d'Évry Paris-Saclay, 2026.
 
 ## Highlights
 
@@ -49,6 +52,7 @@ flowchart LR
 │   ├── policy_B_5of6/          # Policy B weights, kept for comparison (fell on hardware — see below)
 │   └── policy_C_dead_zone/     # Policy C weights, kept for comparison (best training metrics, worst transfer)
 ├── docs/
+│   ├── images/overview.png     # overview picture shown at the top of this README
 │   ├── WORKFLOW_REPORT.md      # full step-by-step project log, written during the internship
 │   ├── POLICY_REFERENCE.md     # A/B/C table and training-log mapping
 │   ├── GALLERY.md              # graphs, videos and photos
