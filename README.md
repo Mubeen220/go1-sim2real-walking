@@ -7,7 +7,7 @@ sim-to-sim check, and deployed on the real robot with a **pure-numpy** forward p
 
 Developed during an M2 EEEA (MMVAI) internship at the IBISC laboratory,
 Université d'Évry Paris-Saclay, 2026. Full write-up: [`docs/WORKFLOW_REPORT.md`](docs/WORKFLOW_REPORT.md).
-Graphs, videos and photos: [`docs/GALLERY.md`](docs/GALLERY.md).
+Graphs, videos and photos: [`docs/GALLERY.md`](docs/GALLERY.md). Policy table: [`docs/POLICY_REFERENCE.md`](docs/POLICY_REFERENCE.md).
 
 ## Highlights
 
@@ -50,6 +50,7 @@ flowchart LR
 │   └── policy_C_dead_zone/     # Policy C weights, kept for comparison (best training metrics, worst transfer)
 ├── docs/
 │   ├── WORKFLOW_REPORT.md      # full step-by-step project log, written during the internship
+│   ├── POLICY_REFERENCE.md     # A/B/C table and training-log mapping
 │   ├── GALLERY.md              # graphs, videos and photos
 │   ├── thesis_numerical_results.txt
 │   └── results/                # plots, trajectory CSVs, training logs, and videos for all three policies
@@ -99,7 +100,7 @@ All three were evaluated through the **identical** deployment code path in MuJoC
 
 - **Policy A** (`exported_policies/go1_deploy_proven/`) — clean, monotonic tracking with the usual undershoot at higher speeds. **This is the policy that was deployed on hardware and never fell.**
 - **Policy B** (`exported_policies/policy_B_5of6/`) — walks well in 5 of 6 commanded directions but turns weakly in one; **fell twice during ground testing**.
-- **Policy C** (`exported_policies/policy_C_dead_zone/`) — had the *best* Isaac Lab training metrics (highest tracking reward, lowest fall rate) of the three, yet the *worst* MuJoCo transfer: a dead zone below 0.5 m/s and a high-speed overshoot. Never ground-tested, for this reason.
+- **Policy C** (`exported_policies/policy_C_dead_zone/`) — had the *best* Isaac Lab training metrics (tracking reward 1.87, fall rate 0.0002) of the three, yet the *worst* MuJoCo transfer: a dead zone below 0.5 m/s and a high-speed overshoot. Never ground-tested, for this reason.
 
 | | Forward tracking @ 0.8 m/s | Response by commanded direction |
 |---|---|---|
@@ -112,6 +113,17 @@ Isaac Lab training curves (mean reward, tracking rewards, fall rate, command cur
 ![Training curves](docs/results/plots/training_train_final.png)
 
 More: all training curves, trajectory plots and the video list are in the **[gallery](docs/GALLERY.md)**. Raw trajectory CSVs are in [`docs/results/trajectories/`](docs/results/trajectories/), full training stdout in [`docs/results/training_logs/`](docs/results/training_logs/), and the clips in [`docs/results/videos/`](docs/results/videos/).
+
+## Conclusion
+
+A deployable walking controller for the Unitree Go1 was trained in Isaac Lab, validated in MuJoCo through the exact code path that runs on the robot, and deployed on the physical robot. Forward and backward walking transferred; turning and low-speed tracking were weaker on hardware.
+
+1. **Training metrics did not predict transfer quality.** Policy C had the best training-time metrics (tracking reward 1.87, fall rate 0.0002) but the worst behaviour after transfer, with a dead zone below 0.5 m/s and a high-speed overshoot. Policy A, with more modest training metrics, transferred cleanly and was the one deployed. The most likely cause is that the longer-trained, more heavily shaped policy specialised to the Go1's neural-network actuator model in Isaac Lab, which MuJoCo does not reproduce.
+2. **Independent validation is part of the method.** Requiring every policy to pass a MuJoCo gate through the *same* deployment module that runs on the robot exposed the Policy C failure before it reached hardware.
+3. **Adding reward terms is riskier than tuning proven ones.** The `feet_clearance` term added to Policy C competed with the other terms and did not improve the measured foot clearance.
+4. **The software gap is a real part of sim-to-real.** The robot's Python 3.6 / PyTorch 1.4 stack could not load modern ONNX or TorchScript exports. Reducing the policy to plain weights and a numpy forward pass removed that dependency.
+
+**Future work:** an actuator-aware transfer (identify or randomise the actuator model, for example with a residual actuator model fitted to real Go1 trajectories); policy selection by agreement across independent simulators instead of training return; better turning and low-speed behaviour; and moving the simulated backflip toward hardware.
 
 ## ⚠️ A note on reproducing Policy A exactly
 
