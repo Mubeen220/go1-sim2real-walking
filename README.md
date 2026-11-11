@@ -7,6 +7,7 @@ sim-to-sim check, and deployed on the real robot with a **pure-numpy** forward p
 
 Developed during an M2 EEEA (MMVAI) internship at the IBISC laboratory,
 Université d'Évry Paris-Saclay, 2026. Full write-up: [`docs/WORKFLOW_REPORT.md`](docs/WORKFLOW_REPORT.md).
+Graphs, videos and photos: [`docs/GALLERY.md`](docs/GALLERY.md).
 
 ## Highlights
 
@@ -49,6 +50,7 @@ flowchart LR
 │   └── policy_C_dead_zone/     # Policy C weights, kept for comparison (best training metrics, worst transfer)
 ├── docs/
 │   ├── WORKFLOW_REPORT.md      # full step-by-step project log, written during the internship
+│   ├── GALLERY.md              # graphs, videos and photos
 │   ├── thesis_numerical_results.txt
 │   └── results/                # plots, trajectory CSVs, training logs, and videos for all three policies
 └── tests/                      # hardware-free smoke tests, incl. loading the real deployed weights
@@ -105,7 +107,11 @@ All three were evaluated through the **identical** deployment code path in MuJoC
 | **B** | ![](docs/results/policy_b_velocity_forward.png) | ![](docs/results/policy_b_six_directions.png) |
 | **C** | ![](docs/results/policy_c_velocity_forward.png) | ![](docs/results/policy_c_six_directions.png) |
 
-More: training curves and per-run trajectory plots in [`docs/results/plots/`](docs/results/plots/), raw trajectory CSVs in [`docs/results/trajectories/`](docs/results/trajectories/), full training stdout in [`docs/results/training_logs/`](docs/results/training_logs/), and on-hardware / MuJoCo clips in [`docs/results/videos/`](docs/results/videos/).
+Isaac Lab training curves (mean reward, tracking rewards, fall rate, command curriculum) for one run:
+
+![Training curves](docs/results/plots/training_train_final.png)
+
+More: all training curves, trajectory plots and the video list are in the **[gallery](docs/GALLERY.md)**. Raw trajectory CSVs are in [`docs/results/trajectories/`](docs/results/trajectories/), full training stdout in [`docs/results/training_logs/`](docs/results/training_logs/), and the clips in [`docs/results/videos/`](docs/results/videos/).
 
 ## ⚠️ A note on reproducing Policy A exactly
 
