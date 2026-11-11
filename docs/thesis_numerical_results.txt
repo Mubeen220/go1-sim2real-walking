@@ -1,0 +1,30 @@
+TRAJECTORY SUMMARY  (paste this whole block)
+==============================================================
+steps logged            : 1500  (30.0s)
+cmd vx range            : [-0.56, 0.91]
+vx tracking err  mean/max: 0.024 / 1.067
+vy tracking err  mean/max: 0.059 / 1.152
+yaw tracking err mean/max: 0.091 / 1.018
+trunk height   mean/min  : 0.326 / 0.313  (target 0.34)
+proj gravity z mean      : -1.000  (-1.0 = upright)
+foot duty factor (4)     : [0.68, 0.66, 0.57, 0.6]  (trot ~0.5)
+foot slip mean (4) m/s   : [0.051, 0.062, 0.027, 0.054]  (lower better)
+action rate L2 mean      : 1.0244  (lower smoother)
+joint vel abs mean       : 1.336
+==============================================================
+CSV : /home/maya/go1_thesis/isaac_project/go1_walk/logs/rsl_rl/go1_walk/2026-07-17_12-24-06/trajectory/traj_Template-Go1-Walk-Play-v0.csv
+
+=== MUJOCO SPEED SWEEP (deployment code path) ===
+Speed sweep through the REAL deployment code path:
+  cmd=+0.10  achieved_vx=-0.007  trunk_h=0.328  gz=-0.999
+  cmd=+0.30  achieved_vx=-0.001  trunk_h=0.331  gz=-0.999
+  cmd=+0.50  achieved_vx=+0.103  trunk_h=0.340  gz=-0.999
+  cmd=+0.70  achieved_vx=+0.770  trunk_h=0.354  gz=-0.999
+  cmd=+1.00  achieved_vx=+1.209  trunk_h=0.358  gz=-1.000
+=== POLICY A (12-53-01, guide policy) ===
+Speed sweep through the REAL deployment code path:
+  cmd=+0.10  achieved_vx=+0.007  trunk_h=0.330  gz=-0.999
+  cmd=+0.30  achieved_vx=+0.304  trunk_h=0.342  gz=-0.999
+  cmd=+0.50  achieved_vx=+0.465  trunk_h=0.347  gz=-0.999
+  cmd=+0.70  achieved_vx=+0.576  trunk_h=0.352  gz=-0.999
+  cmd=+1.00  achieved_vx=+0.679  trunk_h=0.357  gz=-0.998
