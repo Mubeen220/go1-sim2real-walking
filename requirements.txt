@@ -1,0 +1,14 @@
+# Deployment / sim2sim (runs on the robot too: Python 3.6, numpy 1.13)
+numpy
+mujoco
+onnxruntime
+glfw            # only needed for deploy_sim_viewer.py / mujoco_run.py --mode interactive
+pyyaml          # only needed to read isaaclab/run_configs/*.yaml
+
+# Development / tests
+pytest
+
+# Isaac Lab training itself (not installed by this file -- see
+# https://isaac-sim.github.io/IsaacLab/ for the full install, which also
+# brings in torch and the isaaclab_tasks / isaaclab_assets packages that
+# isaaclab/go1_walk_env_cfg.py imports)
