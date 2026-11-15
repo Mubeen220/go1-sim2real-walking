@@ -2,7 +2,7 @@
 
 ![Overview: training in Isaac Lab, validation in MuJoCo, deployment on the real Go1](docs/images/overview.png)
 
-**▶ [Watch the real-robot video](docs/results/videos/real_robot_walking.mp4)** · [Training diagram](#training-in-isaac-lab) · [Steps to deploy](#steps-to-deploy-on-the-real-go1) · [Graphs and all videos](docs/GALLERY.md) · [Full project report](docs/WORKFLOW_REPORT.md) · [Policy table](docs/POLICY_REFERENCE.md)
+**▶ [Watch the full pipeline video: Isaac Lab → MuJoCo → real Go1](docs/results/videos/walking_sim_to_real.mp4)** · [Training diagram](#training-in-isaac-lab) · [Steps to deploy](#steps-to-deploy-on-the-real-go1) · [Graphs and all videos](docs/GALLERY.md) · [Full project report](docs/WORKFLOW_REPORT.md) · [Policy table](docs/POLICY_REFERENCE.md)
 
 Sim-to-real transfer of a deep-RL walking controller for the **Unitree Go1** quadruped.
 A policy is trained with PPO in **NVIDIA Isaac Lab**, gated through an independent **MuJoCo**
@@ -60,6 +60,7 @@ flowchart LR
 │   ├── GALLERY.md              # graphs, videos and photos
 │   ├── thesis_numerical_results.txt
 │   └── results/                # plots, trajectory CSVs, training logs, and videos for all three policies
+│       └── videos/walking_sim_to_real.mp4  # full pipeline video: Isaac Lab → MuJoCo → real Go1
 └── tests/                      # hardware-free smoke tests, incl. loading the real deployed weights
 ```
 
