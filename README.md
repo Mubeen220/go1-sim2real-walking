@@ -2,7 +2,7 @@
 
 ![Overview: training in Isaac Lab, validation in MuJoCo, deployment on the real Go1](docs/images/overview.png)
 
-**▶ [Watch the real-robot video](docs/results/videos/real_robot_walking.mp4)** · [Graphs and all videos](docs/GALLERY.md) · [Full project report](docs/WORKFLOW_REPORT.md) · [Policy table](docs/POLICY_REFERENCE.md)
+**▶ [Watch the real-robot video](docs/results/videos/real_robot_walking.mp4)** · [Training diagram](#training-in-isaac-lab) · [Steps to deploy](#steps-to-deploy-on-the-real-go1) · [Graphs and all videos](docs/GALLERY.md) · [Full project report](docs/WORKFLOW_REPORT.md) · [Policy table](docs/POLICY_REFERENCE.md)
 
 Sim-to-real transfer of a deep-RL walking controller for the **Unitree Go1** quadruped.
 A policy is trained with PPO in **NVIDIA Isaac Lab**, gated through an independent **MuJoCo**
@@ -52,7 +52,9 @@ flowchart LR
 │   ├── policy_B_5of6/          # Policy B weights, kept for comparison (fell on hardware — see below)
 │   └── policy_C_dead_zone/     # Policy C weights, kept for comparison (best training metrics, worst transfer)
 ├── docs/
-│   ├── images/overview.png     # overview picture shown at the top of this README
+│   ├── images/
+│   │   ├── overview.png                    # Isaac Lab → MuJoCo → Go1 picture at the top of this README
+│   │   └── training_isaaclab_rl_loop.png   # RL-loop diagram used in "Training in Isaac Lab"
 │   ├── WORKFLOW_REPORT.md      # full step-by-step project log, written during the internship
 │   ├── POLICY_REFERENCE.md     # A/B/C table and training-log mapping
 │   ├── GALLERY.md              # graphs, videos and photos
@@ -157,7 +159,13 @@ python3 deploy_sim_test.py                        # reproduces the Policy A swee
 
 ## Training in Isaac Lab
 
-See [`isaaclab/README.md`](isaaclab/README.md) and [`docs/WORKFLOW_REPORT.md`](docs/WORKFLOW_REPORT.md) for the full walkthrough (environment setup, training, exporting, and reducing to numpy weights). Short version:
+Training is a standard RL loop: the Go1 in **Isaac Lab** (thousands of parallel environments, with terrain and domain randomisation) receives actions, returns observations (proprioception, IMU, joint states), and a scalar **reward** built from weighted terms (velocity tracking, stability, energy, collisions). **PPO (RSL-RL)** uses that reward to update the policy, and the updated policy drives the next round of simulation.
+
+![The RL loop used for training in Isaac Lab: Go1 → Isaac Lab environment → reward function → PPO (RSL-RL) → updated policy → back to the robot](docs/images/training_isaaclab_rl_loop.png)
+
+*Diagram: the robot/simulated robot acts, Isaac Lab simulates physics, the reward function scores the result, PPO updates the network, and the loop repeats. Only the final actor network is exported and run on the real robot.*
+
+See [`isaaclab/README.md`](isaaclab/README.md) and [`docs/WORKFLOW_REPORT.md`](docs/WORKFLOW_REPORT.md) (Steps 1–3) for the full walkthrough (environment setup, training, exporting, and reducing to numpy weights). Short version:
 
 ```bash
 # inside an Isaac Lab installation, with isaaclab/ added as a task source
@@ -165,28 +173,86 @@ python scripts/rsl_rl/train.py --task Template-Go1-Walk-v0 --num_envs 4096 --hea
 python scripts/rsl_rl/play.py --task Template-Go1-Walk-Play-v0 --num_envs 32   # exports policy.onnx / policy.pt
 ```
 
-## Real-robot deployment
+The command curriculum reads a global step counter, so training **must run uninterrupted in one continuous run**. A healthy run reaches a linear-velocity tracking reward above about 1.0 and a fall rate below 0.05.
 
-> ⚠️ **Safety.** This script implements the full staged protocol described in `docs/WORKFLOW_REPORT.md`
-> Step 7: soft calibration gains (Kp=5, Kd=1) during a slow 2.5s ramp to standing, hip
-> gravity-compensation feedforward, and an approximate power monitor that trips to a safe
-> hold. Even so: start with the robot **suspended**, confirm correct leg motion in the air,
-> and only then test on the ground. `MAX_VEL` is capped at the validated 1.0 m/s.
+## Steps to deploy on the real Go1
 
-Requirements on the robot: the [Walk-These-Ways](https://github.com/Improbable-AI/walk-these-ways) `go1_gym_deploy` package (state estimator and LCM message types) and the low-level LCM bridge running.
+> ⚠️ **Safety first.** The first runs are always with the robot **suspended (feet off the ground)** and the remote in hand, ready to put the robot in damping. Do not put the robot on the ground until the leg motion is correct in the air. `MAX_VEL` is capped at the validated 1.0 m/s.
+
+The full record, with the reasoning behind each step, is in [`docs/WORKFLOW_REPORT.md`](docs/WORKFLOW_REPORT.md) (Steps 3–8). The short checklist:
+
+**1. Export the policy as plain weights** (once, on the training machine)
+
+```python
+import torch, numpy as np
+pt = torch.jit.load('exported/policy.pt'); pt.eval()
+np.savez('policy_weights.npz', **{n: p.detach().cpu().numpy() for n, p in pt.named_parameters()})
+```
+
+The robot runs Python 3.6 / PyTorch 1.4, so it cannot load a modern TorchScript or ONNX file. The numpy forward pass in `go1_deploy_common.py` needs only numpy. The deployed Policy A weights are already in `exported_policies/go1_deploy_proven/policy_weights.npz`.
+
+**2. Validate in MuJoCo first (the gate)**
 
 ```bash
-# copy these three files flat into the robot's ~/go1_gym (per docs/WORKFLOW_REPORT.md Step 6):
-#   mujoco_sim2sim/go1_deploy_common.py, deployment/deploy_go1_isaaclab.py,
-#   exported_policies/go1_deploy_proven/policy_weights.npz
-scp mujoco_sim2sim/go1_deploy_common.py deployment/deploy_go1_isaaclab.py \
-    exported_policies/go1_deploy_proven/policy_weights.npz unitree@<robot-ip>:~/go1_gym/
+cd mujoco_sim2sim
+python3 deploy_sim_test.py
+```
 
-# on the robot, inside the WTW container:
+This runs through the same `go1_deploy_common.py` that runs on the robot. A good policy shows a monotonic forward sweep (Policy A: `0.007 / 0.304 / 0.465 / 0.576 / 0.679` for commands `0.1 / 0.3 / 0.5 / 0.7 / 1.0`). A consistent undershoot is normal; a **dead zone** (commands that produce no motion) is not acceptable. Also check the six directions (forward, backward, both strafes, both turns) for the correct sign. Do not go to the robot if this fails.
+
+**3. Copy three files to the robot** (flat into the folder the Walk-These-Ways container mounts)
+
+```bash
+scp mujoco_sim2sim/go1_deploy_common.py deployment/deploy_go1_isaaclab.py \
+    exported_policies/go1_deploy_proven/policy_weights.npz unitree@192.168.123.15:~/go1_gym/
+```
+
+The robot needs the [Walk-These-Ways](https://github.com/Improbable-AI/walk-these-ways) `go1_gym_deploy` package (state estimator and LCM message types). Check that the file paths at the top of `deploy_go1_isaaclab.py` (`sys.path.insert(...)` and `POLICY_PATH`) point to where you put the files.
+
+**4. Suspend the robot and start the low-level bridge** (terminal 1, on the robot host)
+
+```bash
+cd ~/go1_gym/go1_gym_deploy/autostart
+./start_unitree_sdk.sh      # press Enter only when the robot is hanging in the air
+```
+
+**5. Run the policy** (terminal 2, **inside the Walk-These-Ways Docker container**; `lcm` is only installed there)
+
+```bash
 python3 deploy_go1_isaaclab.py
 ```
 
-R2 state machine: **R2** → slow calibrated ramp to standing (soft gains) → **R2** again → policy runs, command starts at zero → nudge the left stick forward in the air and confirm coordinated leg motion before any ground contact → **R2** again, or Ctrl-C, or an automatic power-monitor trip → safe hold at the default pose.
+**6. Step through the R2 state machine (robot still in the air)**
+
+| Press | What happens |
+|---|---|
+| **R2** (1st) | Slow 2.5 s ramp to the standing pose with soft gains (Kp 5, Kd 1) |
+| **R2** (2nd) | Policy runs at Kp 20 / Kd 0.5; the command starts at zero |
+| Nudge the **left stick forward** | Legs should make a coordinated walking rhythm |
+| **R2** again, **Ctrl-C**, or an automatic power-monitor trip | Safe hold at the default pose |
+
+Check that every joint moves in the correct direction, with no violent or jerky motion and a clean start and stop. If a leg moves the wrong way or jerks: **remote to damping, then Ctrl-C**, and re-check the joint mapping in MuJoCo before retrying.
+
+**7. Ground test and speed ladder** (only after step 6 is correct in every direction)
+
+1. Set the robot down with the command at zero and confirm a stable weight-bearing stand.
+2. Start at **0.5 m/s** and confirm a straight, stable walk.
+3. Climb **0.5 → 0.7 → 1.0 m/s**, a stable minute at each step; then test backward and turning.
+4. Slow to a stop with the stick (the command is rate-limited), do not yank it.
+
+**8. Safe stop**: put the **remote in damping first**, then press Ctrl-C in both terminals.
+
+Safety features built into the script: soft calibration gains during the ramp, ±0.65 N·m gravity-compensation feed-forward on the hips, an approximate power monitor (about 150 W, trips after 5 steps) that falls back to a safe hold, and rate-limited commands.
+
+**Common problems**
+
+| Symptom | Cause / fix |
+|---|---|
+| `ModuleNotFoundError: lcm` on the host | `lcm` is only in the container; run the script inside the Walk-These-Ways Docker container |
+| TorchScript load fails (file version) | The robot's torch is too old; use the `.npz` weights and the numpy forward pass (step 1) |
+| Robot frozen but stable, ignores commands | The policy does not transfer / has a dead zone; re-validate in MuJoCo |
+| Robot stops on ground contact | Usually an R2 press (emergency stop), not a fault; use the stick to command |
+| Legs move violently in the air | Joint-order mismatch; damping immediately, re-check the name-based permutations |
 
 ## Limitations
 
